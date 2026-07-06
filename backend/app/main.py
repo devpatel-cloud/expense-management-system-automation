@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from .routers import auth, users, categories, expenses, receipts, budgets, recurring_expenses, dashboard, reports, notifications, admin
 
 app = FastAPI(
     title="Expense Management System API",
@@ -15,6 +16,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(categories.router)
+app.include_router(expenses.router)
+app.include_router(receipts.router)
+app.include_router(budgets.router)
+app.include_router(recurring_expenses.router)
+app.include_router(dashboard.router)
+app.include_router(reports.router)
+app.include_router(notifications.router)
+app.include_router(admin.router)
 
 @app.get("/")
 def read_root():
