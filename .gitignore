@@ -1,14 +1,133 @@
+# ===========================
+# Environment Variables
+# ===========================
+.env
+.env.*
+!.env.example
+
+# ===========================
+# Python
+# ===========================
 __pycache__/
 *.py[cod]
-*.pyc.*
-.env
+*$py.class
+
+# Virtual Environments
 venv/
 .venv/
-node_modules/
-dist/
+env/
+ENV/
+
+# Python Distribution
 build/
-uploads/
+dist/
+*.egg-info/
+
+# Pytest
 .pytest_cache/
 .coverage
+htmlcov/
+
+# Mypy
+.mypy_cache/
+
+# Ruff
+.ruff_cache/
+
+# ===========================
+# Node.js / React / Vite
+# ===========================
+node_modules/
+dist/
+.vite/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ===========================
+# VS Code / JetBrains
+# ===========================
+.vscode/
+.idea/
+
+# ===========================
+# OS Files
+# ===========================
+.DS_Store
+Thumbs.db
+
+# ===========================
+# Docker
+# ===========================
+*.pid
+
+# ===========================
+# PostgreSQL
+# ===========================
+*.sql
+postgres-data/
+pgdata/
+
+# ===========================
+# Terraform
+# ===========================
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl
+
+# ===========================
+# Ansible
+# ===========================
+*.retry
+ansible.log
+
+# ===========================
+# Logs
+# ===========================
+logs/
 *.log
 
+# ===========================
+# Coverage Reports
+# ===========================
+coverage/
+coverage.xml
+
+# ===========================
+# Temporary Files
+# ===========================
+*.tmp
+*.temp
+*.swp
+
+# ===========================
+# Secrets / Certificates
+# ===========================
+*.pem
+*.key
+*.crt
+*.pfx
+id_rsa
+id_rsa.pub
+
+# AWS Credentials
+.aws/
+
+# ===========================
+# IDE Config
+# ===========================
+.history/
+
+# ===========================
+# Mac Metadata
+# ===========================
+.AppleDouble
+.LSOverride
