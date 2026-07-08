@@ -1,4 +1,4 @@
-from .user import UserCreate, UserLogin, UserResponse, Token
+from .user import UserCreate, UserLogin, UserResponse, Token, ForgotPasswordRequest, ResetPasswordRequest
 from .category import CategoryCreate, CategoryUpdate, CategoryResponse
 from .expense import ExpenseCreate, ExpenseUpdate, ExpenseResponse
 from .budget import BudgetCreate, BudgetUpdate, BudgetResponse
@@ -9,6 +9,8 @@ __all__ = [
     "UserLogin",
     "UserResponse",
     "Token",
+    "ForgotPasswordRequest",
+    "ResetPasswordRequest",
     "CategoryCreate",
     "CategoryUpdate",
     "CategoryResponse",

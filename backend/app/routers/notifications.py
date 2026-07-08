@@ -47,6 +47,35 @@ def get_unread_count(
     return {"unread_count": count}
 
 
+@router.put("/mark-all-as-read")
+def mark_all_as_read(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read == False
+    ).update({"is_read": True})
+    
+    db.commit()
+    
+    return {"message": "All notifications marked as read"}
+
+
+@router.delete("/clear-all")
+def clear_all_notifications(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id
+    ).delete()
+    
+    db.commit()
+    
+    return {"message": "All notifications cleared"}
+
+
 @router.get("/{notification_id}", response_model=NotificationResponse)
 def get_notification(
     notification_id: int,
@@ -90,21 +119,6 @@ def mark_as_read(
     return {"message": "Notification marked as read"}
 
 
-@router.put("/mark-all-as-read")
-def mark_all_as_read(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    db.query(Notification).filter(
-        Notification.user_id == current_user.id,
-        Notification.is_read == False
-    ).update({"is_read": True})
-    
-    db.commit()
-    
-    return {"message": "All notifications marked as read"}
-
-
 @router.delete("/{notification_id}")
 def delete_notification(
     notification_id: int,
@@ -126,20 +140,6 @@ def delete_notification(
     db.commit()
     
     return {"message": "Notification deleted successfully"}
-
-
-@router.delete("/clear-all")
-def clear_all_notifications(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    db.query(Notification).filter(
-        Notification.user_id == current_user.id
-    ).delete()
-    
-    db.commit()
-    
-    return {"message": "All notifications cleared"}
 
 
 @router.post("/create")

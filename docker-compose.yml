@@ -1,86 +1,96 @@
-version: '3.8'
-
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
+
+  postgres:
+    image: postgres:16
+    container_name: expense_postgres
+    restart: always
+
     environment:
-      - VITE_API_URL=http://backend:8000
+      POSTGRES_DB: expense_management
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d expense_management"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
     networks:
-      - app-network
+      - expense_network
+
 
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+
+    container_name: expense_backend
+
+    restart: always
+
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/expense_management
+      SECRET_KEY: your_super_secret_key_change_this_in_production
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
     ports:
       - "8000:8000"
-    depends_on:
-      - database
-    environment:
-      - DATABASE_URL=postgresql://expense_user:expense_pass@database:5432/expense_db
-      - ENVIRONMENT=production
-    networks:
-      - app-network
 
-  database:
-    image: postgres:15
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
-    environment:
-      - POSTGRES_USER=expense_user
-      - POSTGRES_PASSWORD=expense_pass
-      - POSTGRES_DB=expense_db
-    ports:
-      - "5432:5432"
     networks:
-      - app-network
+      - expense_network
+
+
+  frontend:
+    build:
+      context: ./frontend
+
+    container_name: expense_frontend
+
+    restart: always
+
+    depends_on:
+      - backend
+
+    ports:
+      - "3000:80"
+
+    networks:
+      - expense_network
+
 
   nginx:
     build:
       context: ./nginx
-      dockerfile: Dockerfile
-    ports:
-      - "80:80"
-      - "443:443"
+
+    container_name: expense_nginx
+
+    restart: always
+
     depends_on:
       - frontend
       - backend
-    networks:
-      - app-network
 
-  prometheus:
-    image: prom/prometheus:latest
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
     ports:
-      - "9090:9090"
-    networks:
-      - app-network
+      - "80:80"
 
-  grafana:
-    image: grafana/grafana:latest
-    volumes:
-      - grafana_data:/var/lib/grafana
-    ports:
-      - "3001:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
     networks:
-      - app-network
+      - expense_network
+
 
 volumes:
   postgres_data:
-  prometheus_data:
-  grafana_data:
+
 
 networks:
-  app-network:
-    driver: bridge
+  expense_network:

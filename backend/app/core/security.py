@@ -6,11 +6,13 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 import os
+from pathlib import Path
 from dotenv import load_dotenv
+from ..database import get_db
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 SECRET_KEY = os.getenv("SECRET_KEY", "your_super_secret_key_change_this_in_production")
@@ -51,11 +53,8 @@ def decode_token(token: str) -> dict:
 
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
-    db: Session = Depends(lambda: None)
+    db: Session = Depends(get_db)
 ):
-    from ..database import get_db
-    db = next(get_db())
-    
     payload = decode_token(token)
     user_id: str = payload.get("sub")
     if user_id is None:

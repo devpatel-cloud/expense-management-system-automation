@@ -1,10 +1,14 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, func, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, func, Boolean, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 from ..database import Base
 
 
 class Category(Base):
     __tablename__ = "categories"
+    __table_args__ = (
+        UniqueConstraint("user_id", "name", name="uq_categories_user_name"),
+        Index("ix_categories_user_created", "user_id", "created_at"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)

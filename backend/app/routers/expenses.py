@@ -107,6 +107,32 @@ def get_expenses(
     return expenses
 
 
+@router.get("/stats/summary")
+def get_expense_summary(
+    start_date: Optional[datetime] = Query(None),
+    end_date: Optional[datetime] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    query = db.query(Expense).filter(Expense.user_id == current_user.id)
+    
+    if start_date:
+        query = query.filter(Expense.expense_date >= start_date)
+    if end_date:
+        query = query.filter(Expense.expense_date <= end_date)
+    
+    expenses = query.all()
+    
+    total_amount = sum(exp.amount for exp in expenses)
+    total_count = len(expenses)
+    
+    return {
+        "total_amount": total_amount,
+        "total_count": total_count,
+        "average_amount": total_amount / total_count if total_count > 0 else 0
+    }
+
+
 @router.get("/{expense_id}", response_model=ExpenseResponse)
 def get_expense(
     expense_id: int,
@@ -201,28 +227,3 @@ def delete_expense(
     
     return {"message": "Expense deleted successfully"}
 
-
-@router.get("/stats/summary")
-def get_expense_summary(
-    start_date: Optional[datetime] = Query(None),
-    end_date: Optional[datetime] = Query(None),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    query = db.query(Expense).filter(Expense.user_id == current_user.id)
-    
-    if start_date:
-        query = query.filter(Expense.expense_date >= start_date)
-    if end_date:
-        query = query.filter(Expense.expense_date <= end_date)
-    
-    expenses = query.all()
-    
-    total_amount = sum(exp.amount for exp in expenses)
-    total_count = len(expenses)
-    
-    return {
-        "total_amount": total_amount,
-        "total_count": total_count,
-        "average_amount": total_amount / total_count if total_count > 0 else 0
-    }

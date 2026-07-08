@@ -1,10 +1,13 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, func, Boolean
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, func, Boolean, Index
 from sqlalchemy.orm import relationship
 from ..database import Base
 
 
 class RecurringExpense(Base):
     __tablename__ = "recurring_expenses"
+    __table_args__ = (
+        Index("ix_recurring_expenses_user_active_due", "user_id", "is_active", "next_due_date"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)

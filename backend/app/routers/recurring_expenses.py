@@ -13,9 +13,9 @@ router = APIRouter(prefix="/recurring-expenses", tags=["Recurring Expenses"])
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_recurring_expense(
     title: str,
-    description: Optional[str] = None,
     amount: float,
     frequency: str,  # daily, weekly, monthly, yearly
+    description: Optional[str] = None,
     category_id: Optional[int] = None,
     next_due_date: datetime = None,
     current_user: User = Depends(get_current_user),
@@ -80,6 +80,33 @@ def get_recurring_expenses(
             "next_due_date": re.next_due_date,
             "is_active": re.is_active,
             "created_at": re.created_at
+        }
+        for re in recurring_expenses
+    ]
+
+
+@router.get("/due/soon")
+def get_due_soon_recurring_expenses(
+    days: int = Query(7, ge=1, le=30),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    cutoff_date = datetime.utcnow() + timedelta(days=days)
+    
+    recurring_expenses = db.query(RecurringExpense).filter(
+        RecurringExpense.user_id == current_user.id,
+        RecurringExpense.is_active == True,
+        RecurringExpense.next_due_date <= cutoff_date
+    ).order_by(RecurringExpense.next_due_date).all()
+    
+    return [
+        {
+            "id": re.id,
+            "title": re.title,
+            "amount": re.amount,
+            "frequency": re.frequency,
+            "next_due_date": re.next_due_date,
+            "days_until_due": (re.next_due_date - datetime.utcnow()).days
         }
         for re in recurring_expenses
     ]
@@ -242,30 +269,3 @@ def process_recurring_expense(
         "expense_id": new_expense.id,
         "next_due_date": recurring_expense.next_due_date
     }
-
-
-@router.get("/due/soon")
-def get_due_soon_recurring_expenses(
-    days: int = Query(7, ge=1, le=30),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    cutoff_date = datetime.utcnow() + timedelta(days=days)
-    
-    recurring_expenses = db.query(RecurringExpense).filter(
-        RecurringExpense.user_id == current_user.id,
-        RecurringExpense.is_active == True,
-        RecurringExpense.next_due_date <= cutoff_date
-    ).order_by(RecurringExpense.next_due_date).all()
-    
-    return [
-        {
-            "id": re.id,
-            "title": re.title,
-            "amount": re.amount,
-            "frequency": re.frequency,
-            "next_due_date": re.next_due_date,
-            "days_until_due": (re.next_due_date - datetime.utcnow()).days
-        }
-        for re in recurring_expenses
-    ]

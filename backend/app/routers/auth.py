@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import timedelta
+from datetime import datetime, timedelta
+import secrets
 from ..database import get_db
-from ..models import User, UserProfile
-from ..schemas import UserCreate, UserLogin, UserResponse, Token
+from ..models import User, UserProfile, PasswordReset
+from ..schemas import UserCreate, UserLogin, UserResponse, Token, ForgotPasswordRequest, ResetPasswordRequest
 from ..core.security import verify_password, get_password_hash, create_access_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES
+from ..core.defaults import create_default_categories
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -38,6 +40,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         last_name=user.last_name
     )
     db.add(user_profile)
+    create_default_categories(db, new_user.id)
     db.commit()
     db.refresh(new_user)
     
@@ -83,3 +86,56 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 def get_user_profile(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.post("/logout")
+def logout(current_user: User = Depends(get_current_user)):
+    return {"message": "Logged out successfully"}
+
+
+@router.post("/forgot-password")
+def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == payload.email).first()
+    if not user:
+        return {"message": "If the email exists, a reset token has been generated"}
+
+    reset = PasswordReset(
+        user_id=user.id,
+        token=secrets.token_urlsafe(32),
+        expires_at=datetime.utcnow() + timedelta(minutes=30),
+    )
+    db.add(reset)
+    db.commit()
+
+    return {
+        "message": "Password reset token generated",
+        "reset_token": reset.token,
+    }
+
+
+@router.post("/reset-password")
+def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+    reset = db.query(PasswordReset).filter(
+        PasswordReset.token == payload.token,
+        PasswordReset.is_used == False,
+        PasswordReset.expires_at >= datetime.utcnow(),
+    ).first()
+
+    if not reset:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token",
+        )
+
+    user = db.query(User).filter(User.id == reset.user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    user.hashed_password = get_password_hash(payload.new_password)
+    reset.is_used = True
+    db.commit()
+
+    return {"message": "Password reset successfully"}

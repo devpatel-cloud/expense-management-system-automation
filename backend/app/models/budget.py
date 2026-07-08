@@ -1,10 +1,14 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, func
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, func, Index
 from sqlalchemy.orm import relationship
 from ..database import Base
 
 
 class Budget(Base):
     __tablename__ = "budgets"
+    __table_args__ = (
+        Index("ix_budgets_user_type", "user_id", "budget_type"),
+        Index("ix_budgets_user_dates", "user_id", "start_date", "end_date"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
